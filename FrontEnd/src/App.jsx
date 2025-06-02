@@ -37,11 +37,44 @@ function SurveyForm() {
     setFormData({ ...formData, ratings: { ...formData.ratings, [q]: val } });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(formData);
-    // You can send to backend here using axios.post('/api/submit', formData)
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // Convert DOB to age
+  const dobDate = new Date(formData.dob);
+  const age = new Date().getFullYear() - dobDate.getFullYear();
+
+  // Pick one favorite food (or join multiple if needed)
+  const favoriteFood = formData.favoriteFood[0] || 'Other';
+
+  // Calculate the average rating from all questions
+  const totalRating = Object.values(formData.ratings).reduce((a, b) => a + Number(b), 0);
+  const avgRating = Object.values(formData.ratings).length
+    ? Math.round(totalRating / Object.values(formData.ratings).length)
+    : 0;
+
+  // Pick the highest-rated hobby
+  const topRated = Object.entries(formData.ratings).reduce((a, b) => b[1] > a[1] ? b : a, ['', 0])[0];
+
+  const payload = {
+    fullname: formData.fullName,
+    email: formData.email,
+    age,
+    dateofBirth: formData.dob,
+    rate: avgRating,
+    foodCategory: favoriteFood,
+    hobbiesCategory: topRated
   };
+
+  try {
+    const res = await axios.post('http://localhost:3001/api/surveys', payload);
+    alert('Survey submitted successfully!');
+    console.log(res.data);
+  } catch (error) {
+    console.error('Error submitting survey:', error);
+    alert('Submission failed.');
+  }
+};
 
   return (
     <div className="container">
@@ -110,7 +143,7 @@ function Results() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/survey-results')
+    axios.get('http://localhost:3001/api/surveys/results')
       .then(res => setData(res.data))
       .catch(err => console.error(err));
   }, []);

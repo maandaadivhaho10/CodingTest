@@ -3,7 +3,6 @@ const cors = require('cors');
 const mysql = require('mysql2');
 
 const app = express();
-const port = 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -24,43 +23,36 @@ db.connect((err) => {
   }
 });
 
-app.get('/api/survey-results', (req, res) => {
-  db.query('SELECT * FROM survey', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+app.post('/api/surveys', (req, res) => {
+  let { fullname, email, dateofBirth, rate, foodCategory, hobbiesCategory } = req.body;
 
-    if (results.length === 0) {
-      return res.json({ message: 'No Surveys Available' });
+  // ✅ Calculate age from dateOfBirth
+  const birthDate = new Date(dateofBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const hasHadBirthdayThisYear = today.getMonth() > birthDate.getMonth() || 
+    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+
+  const sql = `INSERT INTO surveys (fullname, email, age, dateofBirth, rate, foodCategory, hobbiesCategory)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+  const values = [fullname, email, age, dateofBirth, rate, foodCategory, hobbiesCategory];
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error('Error inserting data:', err);
+      res.status(500).json({ message: 'Failed to insert data' });
+    } else {
+      res.status(201).json({ message: 'Survey submitted successfully', id: result.insertId });
     }
-
-    const total = results.length;
-    const ages = results.map(r => r.age);
-    const avgAge = (ages.reduce((a, b) => a + b, 0) / total).toFixed(1);
-    const maxAge = Math.max(...ages);
-    const minAge = Math.min(...ages);
-
-    let pizzaCount = 0;
-    results.forEach(row => {
-      const food = JSON.parse(row.favourite_food || '[]');
-      if (food.includes('Pizza')) pizzaCount++;
-    });
-
-    const pizzaPercentage = ((pizzaCount / total) * 100).toFixed(1);
-
-    const eatOutAvg = (
-      results.reduce((sum, r) => sum + r.eat_out_rating, 0) / total
-    ).toFixed(1);
-
-    res.json({
-      totalSurveys: total,
-      avgAge,
-      maxAge,
-      minAge,
-      pizzaPercentage,
-      eatOutAvg
-    });
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
 });
