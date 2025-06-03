@@ -229,9 +229,9 @@ function Results() {
             <tr><td>Average Age:</td><td>{data.avgAge}</td></tr>
             <tr><td>Oldest Age:</td><td>{data.maxAge}</td></tr>
             <tr><td>Youngest Age:</td><td>{data.minAge}</td></tr>
-            <tr><td>% Who Like Pizza:</td><td>{data.pizzaPercentage}%</td></tr>
-            <tr><td>% Who Like Pasta:</td><td>{data.pastaPercentage}%</td></tr>
-            <tr><td>% Who Like Pap and Wors:</td><td>{data.papAndWorsPercentage}%</td></tr>
+            <tr><td> Who Like Pizza:</td><td>{data.pizzaPercentage}%</td></tr>
+            <tr><td>Who Like Pasta:</td><td>{data.pastaPercentage}%</td></tr>
+            <tr><td>Who Like Pap and Wors:</td><td>{data.papAndWorsPercentage}%</td></tr>
             <tr><td>Avg Rating: Watching Movies:</td><td>{data['I like to watch movies']}</td></tr>
             <tr><td>Avg Rating: Listening to Radio:</td><td>{data['I like to listen to radio']}</td></tr>
             <tr><td>Avg Rating: Eating Out:</td><td>{data['I like to eat out']}</td></tr>
