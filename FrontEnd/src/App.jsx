@@ -5,11 +5,11 @@ import './index.css';
 
 function SurveyForm() {
   const [formData, setFormData] = useState({
-    fullName: '',
+    fullname: '',
     email: '',
-    dob: '',
+    dateofBirth: '',
     contact: '',
-    favoriteFood: [],
+    favoriteFoods: [],
     ratings: {}
   });
 
@@ -27,54 +27,66 @@ function SurveyForm() {
 
   const handleCheckbox = (e) => {
     const { value, checked } = e.target;
-    let updated = [...formData.favoriteFood];
+    let updated = [...formData.favoriteFoods];
     if (checked) updated.push(value);
     else updated = updated.filter(f => f !== value);
-    setFormData({ ...formData, favoriteFood: updated });
+    setFormData({ ...formData, favoriteFoods: updated });
   };
 
   const handleRadioChange = (q, val) => {
     setFormData({ ...formData, ratings: { ...formData.ratings, [q]: val } });
   };
 
-  const handleSubmit = async (e) => {
+
+const handleSubmit = async (e) => {
   e.preventDefault();
 
-  // Convert DOB to age
-  const dobDate = new Date(formData.dob);
-  const age = new Date().getFullYear() - dobDate.getFullYear();
+  // Validate required text fields
+  const { fullname, email, dateofBirth, contact, ratings } = formData;
+  if (!fullname || !email || !dateofBirth || !contact ) {
+    alert('Please fill out all personal details.');
+    return;
+  }
 
-  // Pick one favorite food (or join multiple if needed)
-  const favoriteFood = formData.favoriteFood[0] || 'Other';
+  // Validate age
+  const birthDate = new Date(dateofBirth);
+  const ageDifMs = Date.now() - birthDate.getTime();
+  const ageDate = new Date(ageDifMs);
+  const age = Math.abs(ageDate.getUTCFullYear() - 1970);
 
-  // Calculate the average rating from all questions
-  const totalRating = Object.values(formData.ratings).reduce((a, b) => a + Number(b), 0);
-  const avgRating = Object.values(formData.ratings).length
-    ? Math.round(totalRating / Object.values(formData.ratings).length)
-    : 0;
+  if (age < 5 || age > 120) {
+    alert('Age must be between 5 and 120 years.');
+    return;
+  }
 
-  // Pick the highest-rated hobby
-  const topRated = Object.entries(formData.ratings).reduce((a, b) => b[1] > a[1] ? b : a, ['', 0])[0];
+  // Validate that all rating questions have responses
+  const missingRatings = questions.some(q => !ratings[q]);
+  if (missingRatings) {
+    alert('Please select a rating for every question.');
+    return;
+  }
 
-  const payload = {
-    fullname: formData.fullName,
-    email: formData.email,
-    age,
-    dateofBirth: formData.dob,
-    rate: avgRating,
-    foodCategory: favoriteFood,
-    hobbiesCategory: topRated
-  };
+  // All validations passed
+  console.log('Submitting data:', formData);
 
   try {
-    const res = await axios.post('http://localhost:3001/api/surveys', payload);
+    await axios.post('http://localhost:3000/api/survey', formData);
     alert('Survey submitted successfully!');
-    console.log(res.data);
+    setFormData({
+      fullname: '',
+      email: '',
+      dateofBirth: '',
+      contact: '',
+      favoriteFoods: [],
+      ratings: {}
+    });
   } catch (error) {
     console.error('Error submitting survey:', error);
-    alert('Submission failed.');
+    const errorMsg = error.response?.data?.message || error.response?.data || error.message || 'Failed to submit survey. Please try again.';
+    alert(`Failed to submit survey: ${errorMsg}`);
   }
 };
+
 
   return (
     <div className="container">
@@ -87,21 +99,28 @@ function SurveyForm() {
       <form className="survey-form" onSubmit={handleSubmit}>
         <p>Personal Details:</p>
         <div className="form-wrapper">
-          <label>Full Name <input name="fullName" onChange={handleInput} /></label>
+          <label>Full Name <input name="fullname" onChange={handleInput} /></label>
           <label>Email <input name="email" onChange={handleInput} /></label>
-          <label>Date of Birth <input name="dob" type="date" onChange={handleInput} /></label>
+          <label>Date of Birth <input name="dateofBirth" type="date" onChange={handleInput} /></label>
           <label>Contact Number <input name="contact" onChange={handleInput} /></label>
         </div>
+<div className="section favorite-foods-row">
+  <p className="favorite-foods-label">What is your favorite food?</p>
+  {['Pizza', 'Pasta', 'Pap and Wors', 'Other'].map(item => (
+    <label key={item} className="custom-checkbox-label">
+      <input
+        type="checkbox"
+        value={item}
+        onChange={handleCheckbox}
+        className="custom-checkbox-input"
+      />
+      <span className="custom-checkbox-box"></span>
+      {item}
+    </label>
+  ))}
+</div>
 
-        <div className="section">
-          <p>What is your favorite food?</p>
-          {['Pizza', 'Pasta', 'Pap and Wors', 'Other'].map(item => (
-            <label key={item}>
-              <input type="checkbox" value={item} onChange={handleCheckbox} />
-              {item}
-            </label>
-          ))}
-        </div>
+
 
         <div className="section">
           <p>Please rate your level of agreement from 1 to 5:</p>
@@ -139,23 +158,65 @@ function SurveyForm() {
   );
 }
 
+
 function Results() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/surveys/results')
-      .then(res => setData(res.data))
-      .catch(err => console.error(err));
+    const fetchData = async () => {
+      try {
+        const [
+          totalRes,
+          avgAgeRes,
+          minAgeRes,
+          maxAgeRes,
+          pizzaRes,
+          pastaRes,
+          papWorsRes,
+          ratingsRes
+        ] = await Promise.all([
+          axios.get('http://localhost:3000/total-surveys'),
+          axios.get('http://localhost:3000/api/surveys/average-age'),
+          axios.get('http://localhost:3000/api/survey/youngest-age'),
+          axios.get('http://localhost:3000/api/survey/oldest-age'),
+          axios.get('http://localhost:3000/api/surveys/pizza-percentage'),
+          axios.get('http://localhost:3000/api/surveys/pasta-percentage'),
+          axios.get('http://localhost:3000/api/surveys/pap-and-wors-percentage'),
+          axios.get('http://localhost:3000/api/surveys/average-high-ratings-per-hobby')
+        ]);
+
+        setData({
+          totalSurveys: totalRes.data.total_surveys,
+          avgAge: avgAgeRes.data.averageAge,
+          minAge: minAgeRes.data.youngestAge,
+          maxAge: maxAgeRes.data.oldestAge,
+          pizzaPercentage: pizzaRes.data.pizzaPercentage,
+          pastaPercentage: pastaRes.data.pastaPercentage,
+          papAndWorsPercentage: papWorsRes.data.papAndWorsPercentage,
+          ...ratingsRes.data // includes movie, TV, radio, music, eat out
+        });
+      } catch (error) {
+        console.error('Error loading results:', error);
+        setData({ message: 'Failed to load survey results' });
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
     <div className="container">
+       <h3>_Surveys</h3>
       <nav className="nav">
-        <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>FILL OUT SURVEY</NavLink>
-        <NavLink to="/results" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>VIEW SURVEY RESULTS</NavLink>
+        <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          FILL OUT SURVEY
+        </NavLink>
+        <NavLink to="/results" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          VIEW SURVEY RESULTS
+        </NavLink>
       </nav>
 
-      <h2>Survey Results</h2>
+     <center> <h2>Survey Results</h2> </center>
 
       {!data ? (
         <p>Loading...</p>
@@ -164,23 +225,25 @@ function Results() {
       ) : (
         <table className="results-table">
           <tbody>
-            <tr><td>Total Surveys</td><td>{data.totalSurveys}</td></tr>
-            <tr><td>Average Age</td><td>{data.avgAge}</td></tr>
-            <tr><td>Oldest Age</td><td>{data.maxAge}</td></tr>
-            <tr><td>Youngest Age</td><td>{data.minAge}</td></tr>
-            <tr><td>% Who Like Pizza</td><td>{data.pizzaPercentage}%</td></tr>
-             <tr><td>% Who Like Pasta</td><td>{data.pastaPercentage}%</td></tr>
-               <tr><td>% Who Like Pap and Wors</td><td>{data.papAndWorsPercentage}%</td></tr>
-                 <tr><td>% Who Like Watching Movies</td><td>{data.moviesAverage}%</td></tr>
-                   <tr><td>% Who Like Listen Radio</td><td>{data.radioAverage}%</td></tr>
-            <tr><td>Average "Eat Out" Rating</td><td>{data.eatOutAverage}</td></tr>
-            <tr><td>% Who Like Watching TV</td><td>{data.tvAverage}%</td></tr>
+            <tr><td>Total Surveys:</td><td>{data.totalSurveys}</td></tr>
+            <tr><td>Average Age:</td><td>{data.avgAge}</td></tr>
+            <tr><td>Oldest Age:</td><td>{data.maxAge}</td></tr>
+            <tr><td>Youngest Age:</td><td>{data.minAge}</td></tr>
+            <tr><td>% Who Like Pizza:</td><td>{data.pizzaPercentage}%</td></tr>
+            <tr><td>% Who Like Pasta:</td><td>{data.pastaPercentage}%</td></tr>
+            <tr><td>% Who Like Pap and Wors:</td><td>{data.papAndWorsPercentage}%</td></tr>
+            <tr><td>Avg Rating: Watching Movies:</td><td>{data['I like to watch movies']}</td></tr>
+            <tr><td>Avg Rating: Listening to Radio:</td><td>{data['I like to listen to radio']}</td></tr>
+            <tr><td>Avg Rating: Eating Out:</td><td>{data['I like to eat out']}</td></tr>
+            <tr><td>Avg Rating: Watching TV:</td><td>{data['I like to watch TV']}</td></tr>
+            <tr><td>Avg Rating: Listening to Music:</td><td>{data['I like to listen to music']}</td></tr>
           </tbody>
         </table>
       )}
     </div>
   );
 }
+
 
 export default function App() {
   return (

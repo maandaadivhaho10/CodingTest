@@ -157,9 +157,9 @@ thead th {
 input[type="checkbox"] {
   border: 1px solid #00b7ff !important;
 }
-input[name="fullName"],
+input[name="fullname"],
 input[name="email"],
-input[name="date"],
+input[name="dateofBirth"],
 input[name="dob"],
 input[name="contact"] {
   width: 300px;
@@ -170,4 +170,83 @@ input[name="contact"] {
   margin-top: 5px;
   display: block;
   background-color: white;
+}
+.results-table {
+  border-collapse: collapse; /* Collapse borders */
+  width: 100%;
+  outline: none;
+  border: none; 
+}
+
+.results-table td {
+  border: none; /* Remove borders from all table cells */
+  padding: 8px; /* Optional padding for spacing */
+}
+
+.custom-checkbox-label {
+  position: relative;
+  padding-left: 30px;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 20px; /* spacing between checkboxes */
+}
+
+.custom-checkbox-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 18px;
+  width: 18px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0;
+  z-index: 2;
+}
+
+.custom-checkbox-box {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 18px;
+  width: 18px;
+  border: 2px solid #00b7ff;
+  border-radius: 3px;
+  background-color: white;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.custom-checkbox-input:checked + .custom-checkbox-box {
+  background-color: #00b7ff;
+  border-color: #00b7ff;
+}
+
+.custom-checkbox-input:checked + .custom-checkbox-box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.favorite-foods-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap; /* if screen too small, items wrap nicely */
+}
+
+.favorite-foods-label {
+  margin: 0;      /* remove default <p> margins */
+  white-space: nowrap; /* keep text on one line */
+  user-select: none;   /* optional: prevent text selection on label */
 }
