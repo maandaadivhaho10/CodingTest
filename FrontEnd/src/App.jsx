@@ -14,11 +14,11 @@ function SurveyForm() {
   });
 
   const questions = [
-    'I like to watch movies',
-    'I like to listen to music',
     'I like to listen to radio',
+    'I like to watch TV',
+    'I like to listen to music',
     'I like to eat out',
-    'I like to watch TV'
+    'I like to watch movies'
   ];
 
   const handleInput = (e) => {
@@ -41,7 +41,6 @@ function SurveyForm() {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  // Validate required text fields
   const { fullname, email, dateofBirth, contact, ratings } = formData;
   if (!fullname || !email || !dateofBirth || !contact ) {
     alert('Please fill out all personal details.');
@@ -128,7 +127,7 @@ const handleSubmit = async (e) => {
             <thead>
               <tr>
                 <th></th>
-                {[1, 2, 3, 4, 5].map((n, i) => (
+                {[5, 4, 3, 2, 1].map((n, i) => (
                   <th key={i}>{['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'][i]}</th>
                 ))}
               </tr>
@@ -137,10 +136,10 @@ const handleSubmit = async (e) => {
               {questions.map((q, i) => (
                 <tr key={i}>
                   <td>{q}</td>
-                  {[1, 2, 3, 4, 5].map(num => (
+                  {[5, 4, 3, 2, 1].map(num => (
                     <td key={num}>
                       <input
-                        type="radio"
+                        type="radio" className="accent-blue-500"
                         name={`q${i}`}
                         onChange={() => handleRadioChange(q, num)}
                       />
